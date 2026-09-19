@@ -1,6 +1,6 @@
 # personal-finance
 
-Aplicação de finanças pessoais que substitui o controle manual em planilha. É também o piloto de um fluxo de desenvolvimento agêntico (agentes de IA implementam, pessoas decidem e revisam) guiado por SDD (Spec-Driven Development: toda feature começa por uma especificação).
+Aplicação de finanças pessoais para registrar e entender gastos num lugar só, individualmente ou em grupo. Desenvolvida com um fluxo agêntico (agentes de IA implementam, pessoas decidem e revisam) guiado por SDD (Spec-Driven Development: toda feature começa por uma especificação).
 
 ## Como rodar localmente
 A aplicação ainda não existe. Hoje o que roda é o verificador de documentação:
