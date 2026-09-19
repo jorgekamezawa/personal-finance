@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test documentation checker
+        run: python3 -m unittest discover -s .claude/scripts -p 'test_*.py' -v
+      - name: Check documents against the standard
+        run: python3 .claude/scripts/check_docs.py

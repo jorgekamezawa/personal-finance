@@ -1,0 +1,19 @@
+# Real financial data never goes to git
+*.xlsx
+*.xls
+*.csv
+*.ofx
+
+# Python
+__pycache__/
+*.pyc
+
+# Local environment and personal settings
+.env
+.claude/settings.local.json
+
+# IDE and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
