@@ -25,6 +25,7 @@ CATALOG_TYPES = {
     "README": "readme",
     "Runbook": "runbook",
     "Glossário": "glossary",
+    "Spike": "spike",
 }
 OPTIONAL_MARK = "Só quando houver"
 ADR_FILENAME = re.compile(r"^\d{4}-[a-z0-9]+(-[a-z0-9]+)*\.md$")
@@ -59,6 +60,8 @@ def doc_type(path, root):
         return "adr"
     if parts[:2] == ("docs", "runbooks"):
         return "runbook"
+    if parts[:2] == ("docs", "spikes"):
+        return "spike"
     if rel == Path("docs/product/vision.md"):
         return "vision"
     if rel == Path("docs/product/glossary.md"):

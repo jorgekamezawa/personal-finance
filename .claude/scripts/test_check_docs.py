@@ -118,6 +118,14 @@ class CheckDocsTest(unittest.TestCase):
         readme = (REAL_ROOT / "docs" / "templates" / "readme.md").read_text(encoding="utf-8")
         self.assertEqual(self.errors(self.check("README.md", readme)), [])
 
+    def test_spike_folder_uses_spike_template(self):
+        spike = (REAL_ROOT / "docs" / "templates" / "spike.md").read_text(encoding="utf-8")
+        content = spike.replace("AAAA-MM-DD", "2026-09-20").replace("status: rascunho", "status: ativo")
+        self.assertEqual(self.errors(self.check("docs/spikes/0001-pergunta.md", content)), [])
+        sem_secao = content.replace("## O que aprendemos", "## Notas")
+        errors = self.errors(self.check("docs/spikes/0001-pergunta.md", sem_secao))
+        self.assertTrue(any("O que aprendemos" in f.message for f in errors))
+
     def test_templates_are_skipped(self):
         path = self.root / "docs" / "templates" / "adr.md"
         self.assertEqual(check_docs.check_file(path, self.root), [])
