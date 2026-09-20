@@ -45,6 +45,7 @@ O ADR (registro de decisão de arquitetura) usa status próprio (ver seção ADR
 | ADR | Registrar uma decisão técnica, alternativas e consequências | Decisão cara de reverter ou que afeta vários módulos | técnico | 40 linhas |
 | README | O que é o projeto, como rodar, como navegar pelos docs | Criação do repositório | técnico | 60 linhas |
 | Runbook | Passo a passo de operação (rollback, restaurar backup) | Procedimento que alguém executaria sob pressão | técnico | 40 linhas |
+| Spike | Registrar um experimento curto que responde uma pergunta técnica | Uma decisão não se resolve com pesquisa e exige experimento | técnico | 40 linhas |
 | Glossário | Termos do produto e do projeto, com definição única | Termo usado em 2+ documentos | produto | sem limite |
 | Spec de feature | A definir | A definir | ambos | a definir |
 
@@ -72,11 +73,19 @@ Decisão grande gera decisões menores: cada uma vira seu ADR, ligada à anterio
 - É um retrato do cenário atual. Aceito não se edita: se o cenário mudar, um novo ADR o substitui, e o antigo só recebe status `substituído` e o link.
 - Arquivo: `NNNN-titulo-curto.md`, numeração sequencial.
 
+## Spike
+- É experimento com prazo curto, que responde **uma** pergunta. O código do spike é descartado, nunca vai para a `main`.
+- O spike nasce quando as alternativas de um ADR não se resolvem lendo: ele mede.
+- A pergunta, o prazo e o critério de pronto são escritos **antes** de começar.
+- O resultado alimenta o ADR, que registra a decisão. O spike guarda a evidência: números, comportamento observado e armadilhas encontradas.
+- Arquivo: `NNNN-pergunta-curta.md`, numeração sequencial.
+
 ## Estrutura de pastas
 ```
 docs/
 ├── product/     vision.md, glossary.md
 ├── adr/         NNNN-titulo-curto.md
+├── spikes/      NNNN-pergunta-curta.md
 ├── runbooks/
 ├── specs/
 ├── standards/   documentation.md
