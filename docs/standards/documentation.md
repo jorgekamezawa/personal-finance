@@ -53,7 +53,20 @@ O ADR (registro de decisão de arquitetura) usa status próprio (ver seção ADR
 - Convenções de código vivem em `.claude/` como perfis de stack, não em `docs/`.
 
 ## ADR
+
+### Quando abrir um ADR
+Três perguntas, nesta ordem:
+1. **É arquiteturalmente significativo?** Afeta a estrutura, uma qualidade importante (desempenho, segurança, custo) ou é caro de reverter. Se não, não vira ADR.
+2. **Tem vida própria?** Se muda sem derrubar a decisão anterior, ADR próprio. Se só existe por causa dela (escolher o banco obriga a escolher a ferramenta de migração), é uma decisão de duas partes e fica junta.
+3. **Muda de rotina?** Versão de linguagem, de framework ou de biblioteca muda todo ciclo. Nesse caso o ADR registra a **política** ("usar a LTS (versão de suporte longo) mais recente suportada pelo framework"), e o número vive no arquivo de build.
+
+Decisão grande gera decisões menores: cada uma vira seu ADR, ligada à anterior pelo contexto. Assim, trocar de framework amanhã substitui um ADR só.
+
+### Como escrever
 - Status: `proposto` (em escrita e debate, antes da decisão) | `aceito` | `substituído`.
+- **As alternativas respondem à mesma pergunta do ADR.** Ferramenta de build não é alternativa a linguagem.
+- **Alternativa descartada é explicada pelo que ela faz na prática,** não pela categoria: quem nunca usou aquela ferramenta precisa entender a diferença.
+- **O debate acontece antes, fora do ADR:** opções com prós, contras e consequências se discutem na conversa; o ADR registra o resultado e o motivo curto de cada descarte.
 - Idealmente 3 opções (escolhida + 2 descartadas). Menos só se não houver alternativa real, e o contexto diz por quê.
 - O porquê da decisão cabe em uma frase; se precisar, até 3 bullets logo abaixo.
 - É um retrato do cenário atual. Aceito não se edita: se o cenário mudar, um novo ADR o substitui, e o antigo só recebe status `substituído` e o link.
