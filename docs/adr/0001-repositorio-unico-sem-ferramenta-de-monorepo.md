@@ -15,8 +15,5 @@ Um desenvolvedor, dois artefatos (Java com Gradle, React com Vite) e deploy conj
 
 ## Consequências
 - **Ganhos:** uma versão para tudo; um só lugar para configurar CI e deploy; documentação junto do código.
-- **Custos:** o histórico mistura backend e frontend, atenuado pelo escopo na mensagem do commit (`feat(api):`); o CI precisa detectar o que mudou.
-- **Passa a ser obrigatório:**
-  - pastas `backend/`, `frontend/` e `docs/` na raiz;
-  - PR pequeno, separado por artefato e mergeável sozinho, com o backend antes do frontend que o consome;
-  - CI num workflow único que sempre roda, com um job que detecta o que mudou, jobs condicionais por artefato e um job agregador como única verificação obrigatória. Filtro de caminho no gatilho do workflow deixaria a verificação obrigatória pendente para sempre e travaria o merge.
+- **Custos:** o histórico mistura backend e frontend, e distinguir a origem de cada commit passa a depender de convenção; um mesmo repositório passa a disparar o CI dos dois artefatos, e como isso é organizado fica em aberto.
+- **Passa a ser obrigatório:** pastas `backend/`, `frontend/` e `docs/` na raiz.
