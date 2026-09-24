@@ -9,6 +9,8 @@
 6. **Documento só é commitado depois de aprovado.** Rejeitado durante a escrita, é apagado sem passar pelo git.
 7. Antes de qualquer ação destrutiva (apagar arquivo, volume, branch, recurso em nuvem), pergunte.
 
+Commit, push e abertura de PR passam por um hook que pede confirmação (`.claude/scripts/guard_git.py`), porque texto aqui é contexto e não garantia. O hook pergunta; quem aprova é Jorge.
+
 ## Fluxo de uma mudança
 Proposta e decisões em aberto → aprovação → desenvolvimento → **parada para validação** → aprovação → commit → aprovação → push e PR → merge feito por Jorge.
 
@@ -25,5 +27,6 @@ Proposta e decisões em aberto → aprovação → desenvolvimento → **parada 
 ## Padrões
 - Documentos e specs em português; código, nomes e mensagens de commit em inglês.
 - Documento segue `docs/standards/documentation.md` e passa por `.claude/scripts/check_docs.py` e pelo subagente `doc-reviewer`.
+- Código passa por `.claude/scripts/check_code.py` e por `/code-review` antes de ser mostrado para validação.
 - Pronto significa: build passa, suíte verde, sem aviso novo, e evidência mostrada.
 - Subiu contêiner para testar, derrube ao terminar.
