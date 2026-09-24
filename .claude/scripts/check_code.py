@@ -102,20 +102,20 @@ def check_file(path, root):
     for number, line in enumerate(lines, 1):
         if ADR_REFERENCE.search(line):
             findings.append(Finding("ERRO", relative, number,
-                "cita ADR no codigo: a decisao vive no ADR e a referencia apodrece quando ele e substituido"))
+                "cita ADR no código: a decisão vive no ADR e a referência apodrece quando ele é substituído"))
 
     if is_ascii_only(path):
         for number, line in enumerate(lines, 1):
             found = NON_ASCII.findall(line)
             if found:
                 findings.append(Finding("ERRO", relative, number,
-                    f"caractere fora do ASCII ({''.join(sorted(set(found)))}): o build quebra em maquina com outra codificacao"))
+                    f"caractere fora do ASCII ({''.join(sorted(set(found)))}): o build quebra em máquina com outra codificação"))
     else:
         for number, comment in comment_ranges(lines):
             found = NON_ASCII.findall(comment)
             if found:
                 findings.append(Finding("ERRO", relative, number,
-                    f"comentario com caractere fora do ASCII ({''.join(sorted(set(found)))}): comentario fica em ingles"))
+                    f"comentário com caractere fora do ASCII ({''.join(sorted(set(found)))}): comentário fica em inglês"))
 
     return findings
 
@@ -156,7 +156,7 @@ def check_unreferenced(root):
             if any(other != path and stem in text for other, text in haystack):
                 continue
             findings.append(Finding("AVISO", path.relative_to(root), 0,
-                "ninguem referencia este arquivo: sobra de andaime ou codigo morto"))
+                "ninguém referencia este arquivo: sobra de andaime ou código morto"))
     return findings
 
 

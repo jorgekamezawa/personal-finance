@@ -1,5 +1,7 @@
 import io
 import json
+import os
+import time
 import unittest
 from pathlib import Path
 
@@ -66,7 +68,7 @@ class CheckFile(unittest.TestCase):
         self.write_frontend("Orphan.ts", "export const unused = 1;\n")
         messages = [f.message for f in check_code.check_unreferenced(self.root)]
         self.assertEqual(len(messages), 1)
-        self.assertIn("ninguem referencia", messages[0])
+        self.assertIn("ninguém referencia", messages[0])
 
     def test_does_not_warn_about_a_file_that_is_imported(self):
         self.write_frontend("Used.ts", "export const used = 1;\n")
@@ -102,8 +104,24 @@ class Hook(unittest.TestCase):
 
 
 class GuardGit(unittest.TestCase):
+    def setUp(self):
+        self.session = "sessao-de-teste"
+        self.marker = guard_git.marker(self.session)
+        self.marker.unlink(missing_ok=True)
+        self.addCleanup(self.marker.unlink, True)
+
+    def payload(self, command, tool="Bash"):
+        return {"tool_name": tool, "session_id": self.session, "tool_input": {"command": command}}
+
     def decide(self, command, tool="Bash"):
-        return guard_git.decide({"tool_name": tool, "tool_input": {"command": command}})
+        return guard_git.guarded_action(self.payload(command, tool))
+
+    def ask(self, command):
+        out = io.StringIO()
+        guard_git.run_pre(io.StringIO(json.dumps(self.payload(command))), out)
+        if not out.getvalue():
+            return None
+        return json.loads(out.getvalue())["hookSpecificOutput"]
 
     def test_guards_commit(self):
         self.assertEqual(self.decide('git commit -m "x"'), "commit")
@@ -126,19 +144,37 @@ class GuardGit(unittest.TestCase):
     def test_ignores_other_tools(self):
         self.assertIsNone(self.decide("git commit -m x", tool="Read"))
 
-    def test_hook_asks_for_confirmation(self):
-        out = io.StringIO()
-        guard_git.run_hook(io.StringIO(json.dumps(
-            {"tool_name": "Bash", "tool_input": {"command": "git push"}})), out)
-        payload = json.loads(out.getvalue())["hookSpecificOutput"]
-        self.assertEqual(payload["permissionDecision"], "ask")
-        self.assertIn("push", payload["permissionDecisionReason"])
+    def test_asks_when_the_window_is_closed(self):
+        decision = self.ask("git push")
+        self.assertEqual(decision["permissionDecision"], "ask")
+        self.assertIn("Aprovar push?", decision["permissionDecisionReason"])
+        self.assertIn("abrir PR", decision["permissionDecisionReason"])
 
-    def test_hook_stays_silent_for_a_safe_command(self):
+    def test_stays_silent_for_a_safe_command(self):
+        self.assertIsNone(self.ask("git status"))
+
+    def test_an_approved_action_opens_the_window_for_the_others(self):
+        guard_git.run_post(io.StringIO(json.dumps(self.payload("git commit -m x"))))
+        self.assertTrue(self.marker.exists())
+        self.assertIsNone(self.ask("git push"))
+        self.assertIsNone(self.ask("gh pr create"))
+
+    def test_a_safe_command_does_not_open_the_window(self):
+        guard_git.run_post(io.StringIO(json.dumps(self.payload("git status"))))
+        self.assertFalse(self.marker.exists())
+
+    def test_the_window_expires(self):
+        guard_git.run_post(io.StringIO(json.dumps(self.payload("git commit -m x"))))
+        old = time.time() - guard_git.WINDOW_SECONDS - 1
+        os.utime(self.marker, (old, old))
+        self.assertEqual(self.ask("git push")["permissionDecision"], "ask")
+
+    def test_the_window_belongs_to_one_session(self):
+        guard_git.run_post(io.StringIO(json.dumps(self.payload("git commit -m x"))))
+        other = {"tool_name": "Bash", "session_id": "outra", "tool_input": {"command": "git push"}}
         out = io.StringIO()
-        guard_git.run_hook(io.StringIO(json.dumps(
-            {"tool_name": "Bash", "tool_input": {"command": "git status"}})), out)
-        self.assertEqual(out.getvalue(), "")
+        guard_git.run_pre(io.StringIO(json.dumps(other)), out)
+        self.assertIn("ask", out.getvalue())
 
 
 if __name__ == "__main__":
