@@ -4,16 +4,19 @@
 *.csv
 *.ofx
 
-# Python
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Python (documentation scripts)
 __pycache__/
 *.pyc
-
-# Local environment and personal settings
-.env
-.claude/settings.local.json
 
 # IDE and OS
 .idea/
 .vscode/
 *.iml
 .DS_Store
+*~

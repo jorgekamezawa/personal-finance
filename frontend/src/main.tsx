@@ -1,0 +1,14 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { MantineProvider } from "@mantine/core";
+import "@mantine/core/styles.css";
+import { theme } from "./theme";
+import SystemStatus from "./SystemStatus";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <MantineProvider theme={theme} forceColorScheme="dark">
+      <SystemStatus />
+    </MantineProvider>
+  </StrictMode>,
+);

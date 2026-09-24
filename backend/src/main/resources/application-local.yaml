@@ -1,0 +1,7 @@
+# Local development against the database started by docker compose.
+# Fixed values on purpose: production configuration comes from the environment.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/personal_finance
+    username: personal_finance
+    password: local-dev-only
