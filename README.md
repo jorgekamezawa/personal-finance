@@ -3,14 +3,17 @@
 Aplicação de finanças pessoais para registrar e entender gastos num lugar só, individualmente ou em grupo. Desenvolvida com um fluxo agêntico (agentes de IA implementam, pessoas decidem e revisam) guiado por SDD (Spec-Driven Development: toda feature começa por uma especificação).
 
 ## Como rodar localmente
-A aplicação ainda não existe. Hoje o que roda é o verificador de documentação:
+Copie `.env.example` para `.env`, preencha os valores e suba tudo:
 ```
-python3 .claude/scripts/check_docs.py
+docker compose up -d --build
 ```
+O app fica em `http://localhost:8081` (a porta vem de `APP_PORT`).
 
 ## Como rodar os testes
 ```
-python3 -m unittest discover -s .claude/scripts -p 'test_*.py'
+cd backend && ./gradlew test      # regra e integração com Postgres real
+cd frontend && npm test           # componentes
+python3 .claude/scripts/check_docs.py   # documentos
 ```
 
 ## Como navegar pela documentação
@@ -20,4 +23,4 @@ python3 -m unittest discover -s .claude/scripts -p 'test_*.py'
 4. `docs/specs/`: comportamento de cada feature.
 5. `docs/runbooks/`: só quando for operar o sistema.
 
-Para escrever documentos, siga `docs/standards/documentation.md`.
+Para escrever documentos, siga `docs/standards/documentation.md`. As convenções de código de cada lado ficam em `.claude/rules/backend.md` e `.claude/rules/frontend.md`.

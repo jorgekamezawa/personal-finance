@@ -1,0 +1,30 @@
+# ADR-0020: toda configuração vem de variável de ambiente; nenhum valor sensível aqui.
+spring:
+  application:
+    name: personal-finance
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    # Sem esquema ainda: o Flyway entra junto com a primeira migração.
+    hibernate:
+      ddl-auto: none
+
+management:
+  # ADR-0016: o frontend e a API vivem na mesma origem, e tudo da API fica sob /api.
+  endpoints:
+    web:
+      base-path: /api
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+server:
+  port: 8080
+  shutdown: graceful
