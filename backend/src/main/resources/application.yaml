@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: personal-finance
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      # Below the 30s default: a database that is down answers in seconds instead of
+      # holding the request. Validation is shorter so a dead pooled connection is
+      # discarded inside the connection budget.
+      connection-timeout: 2000
+      validation-timeout: 1000
+      # The application starts even with the database down, so the health screen can report it.
+      initialization-fail-timeout: -1
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+management:
+  endpoints:
+    web:
+      base-path: /api
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: 8080
+  shutdown: graceful

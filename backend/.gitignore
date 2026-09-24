@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+build/
+
+# The wrapper is versioned so anyone builds with the same Gradle, without installing it
+!gradle/wrapper/gradle-wrapper.jar
+
+# Output and metadata from the Eclipse compiler, which the VSCode Java extension uses
+bin/
+.classpath
+.project
+.settings/
+.factorypath
+
+# JVM crash dumps
+hs_err_pid*
+replay_pid*

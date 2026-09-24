@@ -1,5 +1,6 @@
 name: CI
 
+# ADR-0018: enquanto a suíte for rápida, todos os jobs rodam em todo PR, sem filtro por pasta.
 on:
   pull_request:
   push:
@@ -8,10 +9,47 @@ on:
 jobs:
   docs:
     name: docs
-    runs-on: ubuntu-latest
+    # Versão fixa, não o rótulo móvel: assim um vermelho novo é código, não troca de máquina.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Test documentation checker
         run: python3 -m unittest discover -s .claude/scripts -p 'test_*.py' -v
       - name: Check documents against the standard
         run: python3 .claude/scripts/check_docs.py
+
+  backend:
+    name: backend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      # O Testcontainers usa o Docker que já vem na máquina do CI (ADR-0014).
+      - name: Test
+        run: ./gradlew test --no-daemon
+        working-directory: backend
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run typecheck
+        working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
+      - run: npm test
+        working-directory: frontend
+      # O build pega o que tipo e teste não pegam, como importação que só falha ao empacotar.
+      - run: npm run build
+        working-directory: frontend
