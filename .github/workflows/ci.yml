@@ -1,6 +1,6 @@
 name: CI
 
-# ADR-0018: enquanto a suíte for rápida, todos os jobs rodam em todo PR, sem filtro por pasta.
+# Enquanto a suíte for rápida, todos os jobs rodam em todo PR, sem filtro por pasta.
 on:
   pull_request:
   push:
@@ -13,10 +13,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Test documentation checker
+      - name: Test the check scripts
         run: python3 -m unittest discover -s .claude/scripts -p 'test_*.py' -v
       - name: Check documents against the standard
         run: python3 .claude/scripts/check_docs.py
+
+  code:
+    name: code
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check code against the conventions
+        run: python3 .claude/scripts/check_code.py
 
   backend:
     name: backend
