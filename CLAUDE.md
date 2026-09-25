@@ -25,7 +25,7 @@ Proposta e decisões em aberto → aprovação → desenvolvimento → **parada 
 | Fornecedor, plano, preço, versão | runbook e arquivo de build |
 
 ## Padrões
-- Documentos e specs em português; código, nomes e mensagens de commit em inglês.
+- Documentos, specs, mensagem de commit e descrição de PR em português; código, nome de identificador e comentário em inglês.
 - Documento segue `docs/standards/documentation.md` e passa por `.claude/scripts/check_docs.py` e pelo subagente `doc-reviewer`.
 - Código passa por `.claude/scripts/check_code.py` e por `/code-review` antes de ser mostrado para validação.
 - Pronto significa: build passa, suíte verde, sem aviso novo, e evidência mostrada.

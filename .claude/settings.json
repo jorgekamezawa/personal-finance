@@ -8,6 +8,11 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/scripts/guard_git.py\" --pre",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/scripts/guard_format.py\" --pre",
+            "timeout": 120
           }
         ]
       }

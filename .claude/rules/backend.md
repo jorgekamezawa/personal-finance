@@ -13,7 +13,7 @@ paths:
 - `shared/tipo` guarda só tipo de valor usado por dois ou mais módulos e sem dono natural. Regra de negócio nunca sobe para lá.
 
 ## Domínio
-- Classe de domínio não tem anotação de framework, e isso é verificado por teste.
+- Classe de domínio não tem anotação de framework, garantido pelo teste em `backend/src/test/java/com/personalfinance/architecture/`, que roda na suíte comum.
 - Dinheiro é decimal exato; comparar com `compareTo`, nunca `equals`; arredondar só na fronteira em que vira dinheiro, no modo metade para o par ([ADR-0009](../../docs/adr/0009-dinheiro-em-decimal-exato.md)).
 - Data da compra é data pura; instante do sistema é UTC com fuso.
 
@@ -32,6 +32,12 @@ paths:
 - Comentário explica **por que**, nunca o que o código já diz. Se precisa explicar o que faz, o nome está errado.
 - Nenhum comentário citando número de ADR: a decisão vive no ADR, e a referência apodrece quando o ADR é substituído.
 - Nada de código comentado, histórico em comentário ou TODO sem issue.
+
+## Ferramenta
+- Formato do código Java: 4 espaços de indentação, 120 colunas, nenhum `import` não usado. Quem define é o formatador, não o editor.
+- Rode o formatador antes de mostrar código para validação; o commit é barrado se o formato estiver fora, e o CI confere sem corrigir ([ADR-0021](../../docs/adr/0021-regra-de-codigo-verificada-por-ferramenta-no-build.md)).
+- Comparar dinheiro com `equals` quebra a compilação. Construir dinheiro a partir de `double` quebra o build mesmo quando o valor vem de variável.
+- Dinheiro se constrói de texto (`new BigDecimal("10.50")`) ou de centavos (`BigDecimal.valueOf(1050, 2)`).
 
 ## Configuração
 - Toda configuração vem de variável de ambiente; nenhum endereço ou senha no código ([ADR-0020](../../docs/adr/0020-segredos-fora-do-ambiente-e-configuracao-por-variavel.md)).
