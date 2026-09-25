@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -22,7 +22,7 @@ class HealthEndpointTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @LocalServerPort
     int port;
@@ -30,12 +30,14 @@ class HealthEndpointTest {
     @Test
     void reportsApplicationAndDatabaseUp() throws Exception {
         HttpResponse<String> response = HttpClient.newHttpClient()
-                .send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/health")).build(),
+                .send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/health"))
+                                .build(),
                         HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(200);
         JsonNode body = new ObjectMapper().readTree(response.body());
-        assertThat(body.get("status").asText()).isEqualTo("UP");
-        assertThat(body.path("components").path("db").path("status").asText()).isEqualTo("UP");
+        assertThat(body.get("status").asString()).isEqualTo("UP");
+        assertThat(body.path("components").path("db").path("status").asString()).isEqualTo("UP");
     }
 }

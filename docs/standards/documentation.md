@@ -1,6 +1,6 @@
 ---
 status: ativo
-atualizado: 2026-09-19
+atualizado: 2026-09-24
 ---
 # Padrão de documentação
 
@@ -69,6 +69,7 @@ Decisão grande gera decisões menores: cada uma vira seu ADR, ligada à anterio
 - **Alternativa descartada é explicada pelo que ela faz na prática,** não pela categoria: quem nunca usou aquela ferramenta precisa entender a diferença.
 - **O debate acontece antes, fora do ADR:** opções com prós, contras e consequências se discutem na conversa; o ADR registra o resultado e o motivo curto de cada descarte.
 - **Consequência descreve efeito, não escolhe.** Para cada item das consequências, pergunte: existia alternativa plausível para isto, que este ADR não debateu? Se existia, não é consequência, é decisão nova, e vira ADR próprio; aqui fica só a menção de que está em aberto, sem apontar para um ADR que ainda não existe.
+- **Link de ADR só aponta para trás.** Um ADR nunca linka um ADR mais novo que ele. A única exceção é a substituição: o ADR novo substitui o antigo, e o antigo passa a `substituído` e recebe o link de quem o substituiu.
 - **ADR aceito não se edita, com uma exceção:** quando ele carrega decisão que nunca foi debatida ou erro factual, a correção entra em PR próprio dizendo o que mudou e por quê.
 - Idealmente 3 opções (escolhida + 2 descartadas). Menos só se não houver alternativa real, e o contexto diz por quê.
 - O porquê da decisão cabe em uma frase; se precisar, até 3 bullets logo abaixo.

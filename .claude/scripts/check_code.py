@@ -23,7 +23,7 @@ ASCII_ONLY_NAMES = {"Dockerfile", "Caddyfile"}
 # Frontend files show Portuguese text, so only their comments must stay ASCII.
 COMMENT_ONLY_SUFFIXES = {".ts", ".tsx", ".js", ".jsx", ".css"}
 
-SOURCE_DIRS = ("backend/src", "frontend/src", "frontend/public")
+SOURCE_DIRS = ("backend/src", "frontend/src", "frontend/public", ".github/workflows")
 EXTRA_FILES = (
     "docker-compose.yml",
     "backend/build.gradle.kts",

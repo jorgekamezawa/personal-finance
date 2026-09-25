@@ -1,6 +1,6 @@
 name: CI
 
-# Enquanto a suíte for rápida, todos os jobs rodam em todo PR, sem filtro por pasta.
+# While the suite is fast, every job runs on every PR, with no per-folder filter.
 on:
   pull_request:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   docs:
     name: docs
-    # Versão fixa, não o rótulo móvel: assim um vermelho novo é código, não troca de máquina.
+    # Pinned version, not the moving label: a new red means code, not a different machine.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -35,9 +35,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      # O Testcontainers usa o Docker que já vem na máquina do CI (ADR-0014).
-      - name: Test
-        run: ./gradlew test --no-daemon
+          cache: gradle
+      # One invocation only: every Gradle start costs close to ten seconds.
+      # The formatter just checks; fixing would mean pushing from the workflow.
+      # Testcontainers uses the Docker the CI machine already provides.
+      - name: Check formatting and test
+        run: ./gradlew spotlessCheck test --no-daemon
         working-directory: backend
 
   frontend:
@@ -58,6 +61,6 @@ jobs:
         working-directory: frontend
       - run: npm test
         working-directory: frontend
-      # O build pega o que tipo e teste não pegam, como importação que só falha ao empacotar.
+      # The build catches what types and tests do not, such as an import that only fails when packaging.
       - run: npm run build
         working-directory: frontend
