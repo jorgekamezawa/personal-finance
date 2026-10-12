@@ -11,8 +11,10 @@ jobs:
     name: docs
     # Pinned version, not the moving label: a new red means code, not a different machine.
     runs-on: ubuntu-24.04
+    # Without a limit, a hung step holds the check for six hours, the platform default.
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Test the check scripts
         run: python3 -m unittest discover -s .claude/scripts -p 'test_*.py' -v
       - name: Check documents against the standard
@@ -21,17 +23,19 @@ jobs:
   code:
     name: code
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check code against the conventions
         run: python3 .claude/scripts/check_code.py
 
   backend:
     name: backend
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '25'
@@ -46,9 +50,10 @@ jobs:
   frontend:
     name: frontend
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -70,6 +75,7 @@ jobs:
     # The suite is the gate: nothing is built for publishing unless every other job passed.
     needs: [docs, code, backend, frontend]
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -79,7 +85,7 @@ jobs:
       matrix:
         image: [backend, frontend]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       # A pull request only proves the image builds; publishing happens on main alone.
       - uses: docker/login-action@v4
