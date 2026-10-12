@@ -1,6 +1,6 @@
 ---
 status: ativo
-atualizado: 2026-09-24
+atualizado: 2026-10-12
 ---
 # Padrão de documentação
 
@@ -27,7 +27,7 @@ status: rascunho | ativo | substituído | obsoleto
 atualizado: AAAA-MM-DD
 ---
 ```
-O ADR (registro de decisão de arquitetura) usa status próprio (ver seção ADR). O README não tem frontmatter: o GitHub o mostraria como tabela no topo da vitrine.
+O ADR (registro de decisão de arquitetura) e o registro de decisões usam status próprio (ver a seção de cada um). O README não tem frontmatter: o GitHub o mostraria como tabela no topo da vitrine.
 
 ## Ciclo de vida
 - O documento nasce do template em `docs/templates/` quando o gatilho do seu tipo acontece.
@@ -46,6 +46,7 @@ O ADR (registro de decisão de arquitetura) usa status próprio (ver seção ADR
 | README | O que é o projeto, como rodar, como navegar pelos docs | Criação do repositório | técnico | 60 linhas |
 | Runbook | Passo a passo de operação (rollback, restaurar backup) | Procedimento que alguém executaria sob pressão | técnico | 40 linhas |
 | Spike | Registrar um experimento curto que responde uma pergunta técnica | Uma decisão não se resolve com pesquisa e exige experimento | técnico | 40 linhas |
+| Registro de decisões | Guardar o debate de uma entrega: opções, números da época, escolha e o que foi corrigido | Entrega com decisões que não cabem em ADR nem em runbook | técnico | sem limite |
 | Glossário | Termos do produto e do projeto, com definição única | Termo usado em 2+ documentos | produto | sem limite |
 | Spec de feature | A definir | A definir | ambos | a definir |
 
@@ -83,12 +84,23 @@ Decisão grande gera decisões menores: cada uma vira seu ADR, ligada à anterio
 - O resultado alimenta o ADR, que registra a decisão. O spike guarda a evidência: números, comportamento observado e armadilhas encontradas.
 - Arquivo: `NNNN-pergunta-curta.md`, numeração sequencial.
 
+## Registro de decisões
+- Guarda o caminho até a decisão; o ADR guarda só o resultado que é caro de reverter. Fornecedor, plano, preço, latência e tempo medido entram aqui como retrato datado do que se viu na decisão; o valor vigente continua no runbook ou no arquivo de build.
+- Um arquivo por entrega (um pedaço entregue do projeto, como a primeira versão do deploy ou uma feature), cobrindo todas as decisões dela.
+- Status: `registrado`.
+- É um retrato datado e não se edita depois. O que mudar entra no registro da entrega seguinte.
+- Medição feita em experimento fica no spike; o registro linka o spike e traz só o número usado na escolha.
+- Decisão que virou ADR aparece com o link e os números que o ADR não pode carregar, sem repetir o texto dele.
+- O que foi afirmado errado e corrigido durante a entrega também entra: é o que explica por que a decisão mudou.
+- Arquivo: `NNNN-titulo-curto.md`, numeração sequencial.
+
 ## Estrutura de pastas
 ```
 docs/
 ├── product/     vision.md, glossary.md
 ├── adr/         NNNN-titulo-curto.md
 ├── spikes/      NNNN-pergunta-curta.md
+├── decisions/   NNNN-titulo-curto.md
 ├── runbooks/
 ├── specs/
 ├── standards/   documentation.md
