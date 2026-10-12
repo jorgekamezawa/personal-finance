@@ -1,10 +1,10 @@
 ---
-status: proposto
-atualizado: 2026-09-24
+status: aceito
+atualizado: 2026-10-12
 ---
 # ADR-0020: Segredos guardados fora do ambiente e configuração por variável
 
-**Decisão:** os segredos ficam guardados **fora do ambiente que é destruído**, no cofre de segredos do repositório, e são entregues ao servidor no momento em que ele é criado; a aplicação lê **toda** a configuração de variáveis de ambiente, sem endereço nem senha escritos no código.
+**Decisão:** os segredos ficam guardados **fora do ambiente que é destruído**, no **cofre de segredos do próprio GitHub** (a área de segredos do repositório, que guarda cada valor criptografado e só o entrega aos fluxos do CI), e o fluxo que cria o servidor os entrega a ele nesse momento; a aplicação lê **toda** a configuração de variáveis de ambiente, sem endereço nem senha escritos no código.
 
 ## Contexto
 Decorre do [ADR-0019](0019-ambiente-criado-e-destruido-sob-demanda.md): como o ambiente é destruído e recriado com frequência, qualquer segredo que more apenas nele desaparece junto. O mesmo artefato precisa rodar na máquina de desenvolvimento e no servidor, mudando só os valores.
