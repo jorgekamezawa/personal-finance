@@ -11,12 +11,13 @@ data "hcloud_ssh_key" "admin" {
 # What lets the server join the private network by itself, already tagged.
 # Single use and short lived: it ends up in the state, and by then it is worthless.
 # Ephemeral, so the network forgets the server soon after it is gone and the next one keeps the name.
+# No comma in the description: the network refuses the key with "invalid characters".
 resource "tailscale_tailnet_key" "server" {
   reusable      = false
   ephemeral     = true
   preauthorized = true
   expiry        = 900
-  description   = "${var.name} server, single use"
+  description   = "${var.name} server single use"
   tags          = ["tag:financas-server"]
 }
 
