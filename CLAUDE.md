@@ -19,6 +19,7 @@ Proposta e decisões em aberto → aprovação → desenvolvimento → **parada 
 |---|---|
 | Por que escolhemos | `docs/adr/` |
 | Experimento que decidiu algo | `docs/spikes/` |
+| Debate, números e correções de uma entrega | `docs/decisions/` |
 | Regra de negócio | spec da feature em `docs/specs/` |
 | Como fazer sempre | `.claude/rules/backend.md` e `frontend.md` |
 | Passo a passo de operação | `docs/runbooks/` |

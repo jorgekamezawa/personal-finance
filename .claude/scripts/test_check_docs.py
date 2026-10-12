@@ -126,6 +126,30 @@ class CheckDocsTest(unittest.TestCase):
         errors = self.errors(self.check("docs/spikes/0001-pergunta.md", sem_secao))
         self.assertTrue(any("O que aprendemos" in f.message for f in errors))
 
+    def decision_log(self):
+        template = (REAL_ROOT / "docs" / "templates" / "decision-log.md").read_text(encoding="utf-8")
+        return template.replace("AAAA-MM-DD", "2026-10-12")
+
+    def test_decisions_folder_uses_decision_log_template(self):
+        content = self.decision_log()
+        self.assertEqual(self.errors(self.check("docs/decisions/0001-fatia.md", content)), [])
+        sem_secao = content.replace("## Decisões", "## Notas")
+        errors = self.errors(self.check("docs/decisions/0001-fatia.md", sem_secao))
+        self.assertTrue(any("Decisões" in f.message for f in errors))
+
+    def test_decision_log_has_its_own_status(self):
+        content = self.decision_log().replace("status: registrado", "status: ativo")
+        errors = self.errors(self.check("docs/decisions/0001-fatia.md", content))
+        self.assertTrue(any("registrado" in f.message for f in errors))
+
+    def test_decision_log_filename_pattern_is_error(self):
+        errors = self.errors(self.check("docs/decisions/fatia.md", self.decision_log()))
+        self.assertTrue(any("NNNN" in f.message for f in errors))
+
+    def test_decision_log_has_no_size_warning(self):
+        content = self.decision_log() + "".join(f"- item {i}\n" for i in range(200))
+        self.assertEqual(self.warnings(self.check("docs/decisions/0001-fatia.md", content)), [])
+
     def test_templates_are_skipped(self):
         path = self.root / "docs" / "templates" / "adr.md"
         self.assertEqual(check_docs.check_file(path, self.root), [])

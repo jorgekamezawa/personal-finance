@@ -26,9 +26,12 @@ CATALOG_TYPES = {
     "Runbook": "runbook",
     "Glossário": "glossary",
     "Spike": "spike",
+    "Registro de decisões": "decision-log",
 }
 OPTIONAL_MARK = "Só quando houver"
-ADR_FILENAME = re.compile(r"^\d{4}-[a-z0-9]+(-[a-z0-9]+)*\.md$")
+NUMBERED_FILENAME = re.compile(r"^\d{4}-[a-z0-9]+(-[a-z0-9]+)*\.md$")
+# Types whose file name carries a sequence number, with the name used in the error message.
+NUMBERED_TYPES = {"adr": "ADR", "decision-log": "registro de decisões"}
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 DASHES = {"—": "travessão", "–": "meia-risca"}
 NA = re.compile(r"(?<!\w)N/A(?!\w)")
@@ -62,6 +65,8 @@ def doc_type(path, root):
         return "runbook"
     if parts[:2] == ("docs", "spikes"):
         return "spike"
+    if parts[:2] == ("docs", "decisions"):
+        return "decision-log"
     if rel == Path("docs/product/vision.md"):
         return "vision"
     if rel == Path("docs/product/glossary.md"):
@@ -72,20 +77,24 @@ def doc_type(path, root):
 def load_standard(root):
     lines = (root / STANDARD).read_text(encoding="utf-8").splitlines()
     _, body_start = split_frontmatter(lines)
-    general = adr = None
+    general = section = None
+    type_statuses = {}
     sizes = {}
     for line in lines[body_start:]:
         stripped = line.strip()
-        if stripped.startswith("status:") and general is None:
+        if line.startswith("## "):
+            section = CATALOG_TYPES.get(line[3:].strip())
+        elif stripped.startswith("status:") and general is None:
             general = {s.strip() for s in stripped[len("status:"):].split("|")}
-        elif stripped.startswith("- Status:"):
-            adr = set(re.findall(r"`([^`]+)`", stripped))
+        elif stripped.startswith("- Status:") and section:
+            # A type with its own section and a "- Status:" line overrides the general statuses.
+            type_statuses[section] = set(re.findall(r"`([^`]+)`", stripped))
         elif stripped.startswith("|"):
             cells = [c.strip() for c in stripped.strip("|").split("|")]
             if cells[0] in CATALOG_TYPES:
                 number = re.match(r"\d+", cells[-1])
                 sizes[CATALOG_TYPES[cells[0]]] = int(number.group()) if number else None
-    return {"statuses": general, "adr_statuses": adr, "sizes": sizes}
+    return {"statuses": general, "type_statuses": type_statuses, "sizes": sizes}
 
 
 def required_sections(root, kind):
@@ -146,14 +155,14 @@ def check_file(path, root=ROOT):
         if fields is None:
             add("ERRO", 1, "frontmatter ausente (status e atualizado)")
         else:
-            allowed = standard["adr_statuses"] if kind == "adr" else standard["statuses"]
+            allowed = standard["type_statuses"].get(kind, standard["statuses"])
             if fields.get("status") not in allowed:
                 add("ERRO", 2, f"status inválido; use: {', '.join(sorted(allowed))}")
             if not DATE.match(fields.get("atualizado", "")):
                 add("ERRO", 3, "atualizado ausente ou fora do formato AAAA-MM-DD")
 
-    if kind == "adr" and not ADR_FILENAME.match(path.name):
-        add("ERRO", 1, "nome do ADR deve seguir NNNN-titulo-curto.md")
+    if kind in NUMBERED_TYPES and not NUMBERED_FILENAME.match(path.name):
+        add("ERRO", 1, f"nome do {NUMBERED_TYPES[kind]} deve seguir NNNN-titulo-curto.md")
 
     size = 0
     for number, text in prose_lines(lines, body_start):
