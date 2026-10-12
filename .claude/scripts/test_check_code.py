@@ -49,6 +49,13 @@ class CheckFile(unittest.TestCase):
         self.addCleanup(path.unlink)
         self.assertIn("fora do ASCII", self.messages(path)[0])
 
+    def test_rejects_non_ascii_in_terraform(self):
+        path = self.root / "infra" / "temp-test.tf"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# Cópia do banco\n", encoding="utf-8")
+        self.addCleanup(path.unlink)
+        self.assertIn("fora do ASCII", self.messages(path)[0])
+
     def test_allows_portuguese_text_in_frontend(self):
         path = self.write_frontend("Tela.tsx", 'export const label = "Estado do sistema: indisponível";\n')
         self.assertEqual(self.messages(path), [])
