@@ -70,10 +70,27 @@ jobs:
       - run: npm run build
         working-directory: frontend
 
+  terraform:
+    name: terraform
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.9
+      - name: Check formatting
+        run: terraform fmt -check -recursive infra
+      # No backend: validating needs the plugins, not the state nor any credential.
+      - name: Validate the persistent layer
+        run: |
+          terraform -chdir=infra/persistent init -backend=false
+          terraform -chdir=infra/persistent validate
+
   images:
     name: images
     # The suite is the gate: nothing is built for publishing unless every other job passed.
-    needs: [docs, code, backend, frontend]
+    needs: [docs, code, backend, frontend, terraform]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

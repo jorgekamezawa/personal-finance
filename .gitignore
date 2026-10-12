@@ -10,6 +10,11 @@
 !.env.example
 .claude/settings.local.json
 
+# Terraform: downloaded plugins and any local copy of the state
+.terraform/
+*.tfstate
+*.tfstate.*
+
 # Python (documentation scripts)
 __pycache__/
 *.pyc

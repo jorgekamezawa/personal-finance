@@ -18,12 +18,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # Backend and operations files carry no user-facing text, so any accented character
 # there is a comment or an identifier that breaks on a machine with another encoding.
-ASCII_ONLY_SUFFIXES = {".java", ".kts", ".gradle", ".yaml", ".yml", ".sql", ".properties"}
+ASCII_ONLY_SUFFIXES = {".java", ".kts", ".gradle", ".yaml", ".yml", ".sql", ".properties", ".tf"}
 ASCII_ONLY_NAMES = {"Dockerfile", "Caddyfile"}
 # Frontend files show Portuguese text, so only their comments must stay ASCII.
 COMMENT_ONLY_SUFFIXES = {".ts", ".tsx", ".js", ".jsx", ".css"}
 
-SOURCE_DIRS = ("backend/src", "frontend/src", "frontend/public", ".github/workflows")
+SOURCE_DIRS = ("backend/src", "frontend/src", "frontend/public", ".github/workflows", "infra")
 EXTRA_FILES = (
     "docker-compose.yml",
     "backend/build.gradle.kts",
@@ -32,7 +32,7 @@ EXTRA_FILES = (
     "frontend/Dockerfile",
     "frontend/Caddyfile",
 )
-SKIP_DIRS = {"node_modules", "build", "dist", "bin", ".gradle", "__pycache__"}
+SKIP_DIRS = {"node_modules", "build", "dist", "bin", ".gradle", "__pycache__", ".terraform"}
 
 ADR_REFERENCE = re.compile(r"\bADR-\d{4}\b")
 NON_ASCII = re.compile(r"[^\x00-\x7F]")
