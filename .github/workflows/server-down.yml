@@ -1,0 +1,79 @@
+name: server down
+
+# Takes the server out of the private network and destroys it.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'type "destroy" to confirm'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: server
+  cancel-in-progress: false
+
+env:
+  SERVER: personal-finance
+  APP_USER: finance
+
+jobs:
+  down:
+    name: down
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # The button sits next to the others and has no confirmation of its own.
+      - name: Confirm the intent
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          [ "$CONFIRM" = "destroy" ] || {
+            echo "::error::to destroy the server, type exactly: destroy"
+            exit 1
+          }
+
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.9
+
+      - name: Join the private network
+        uses: tailscale/github-action@v4.2.0
+        with:
+          oauth-client-id: ${{ vars.TS_CI_CLIENT_ID }}
+          audience: ${{ vars.TS_CI_AUDIENCE }}
+          tags: tag:financas-ci
+
+      # Logging out makes the network forget the server at once, so the next one keeps the name.
+      # A server that does not answer is forgotten by the network on its own, only later.
+      - name: Take the server out of the private network
+        run: |
+          if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 \
+                 "$APP_USER@$SERVER" 'true' 2>/dev/null; then
+            # In the background and delayed: logging out cuts the very session that asks for it.
+            ssh "$APP_USER@$SERVER" 'nohup sh -c "sleep 2; sudo tailscale logout" >/dev/null 2>&1 &'
+            sleep 10
+            echo "server left the private network"
+          else
+            echo "::warning::the server did not answer; destroying it anyway"
+          fi
+
+      - name: Destroy the server
+        env:
+          HCLOUD_TOKEN: ${{ secrets.TF_HCLOUD_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.TF_STATE_ENDPOINT }}
+          TAILSCALE_OAUTH_CLIENT_ID: ${{ vars.TS_SERVER_CLIENT_ID }}
+          TAILSCALE_AUDIENCE: ${{ vars.TS_SERVER_AUDIENCE }}
+        run: |
+          terraform -chdir=infra/ephemeral init -input=false
+          # The two values are placeholders: what gets destroyed comes from the state, but the
+          # variables have no default, so that creating without choosing a machine fails.
+          terraform -chdir=infra/ephemeral destroy -auto-approve -input=false \
+            -var 'server_type=unused-on-destroy' -var 'location=unused-on-destroy'
