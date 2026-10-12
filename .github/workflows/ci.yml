@@ -82,10 +82,12 @@ jobs:
       - name: Check formatting
         run: terraform fmt -check -recursive infra
       # No backend: validating needs the plugins, not the state nor any credential.
-      - name: Validate the persistent layer
+      - name: Validate each layer
         run: |
-          terraform -chdir=infra/persistent init -backend=false
-          terraform -chdir=infra/persistent validate
+          for layer in persistent ephemeral; do
+            terraform -chdir=infra/$layer init -backend=false
+            terraform -chdir=infra/$layer validate
+          done
 
   images:
     name: images

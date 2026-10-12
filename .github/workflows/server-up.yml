@@ -1,0 +1,84 @@
+name: server up
+
+# Creates the server and proves it joined the private network. One button.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Lets the job ask for the identity token the private network trusts; no secret is stored for it.
+  id-token: write
+
+# Up and down write the same state: one at a time, and a second click waits instead of cancelling.
+concurrency:
+  group: server
+  cancel-in-progress: false
+
+env:
+  SERVER: personal-finance
+  APP_USER: finance
+
+jobs:
+  up:
+    name: up
+    runs-on: ubuntu-24.04
+    # The wait alone can take 17 minutes: 40 attempts of up to 25 seconds each.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.9
+          # The wrapper adds text around the output, which breaks reading a value from it.
+          terraform_wrapper: false
+
+      - name: Choose the machine and create the server
+        env:
+          HCLOUD_TOKEN: ${{ secrets.TF_HCLOUD_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL_S3: ${{ secrets.TF_STATE_ENDPOINT }}
+          TAILSCALE_OAUTH_CLIENT_ID: ${{ vars.TS_SERVER_CLIENT_ID }}
+          TAILSCALE_AUDIENCE: ${{ vars.TS_SERVER_AUDIENCE }}
+        run: |
+          ./infra/ephemeral/choose-machine.sh
+          terraform -chdir=infra/ephemeral init -input=false
+          terraform -chdir=infra/ephemeral apply -auto-approve -input=false
+          echo "MACHINE=$(terraform -chdir=infra/ephemeral output -raw machine)" >> "$GITHUB_ENV"
+
+      - name: Join the private network
+        uses: tailscale/github-action@v4.2.0
+        with:
+          oauth-client-id: ${{ vars.TS_CI_CLIENT_ID }}
+          audience: ${{ vars.TS_CI_AUDIENCE }}
+          tags: tag:financas-ci
+
+      # Waiting for the file proves the machine finished setting itself up, not just that it registered.
+      - name: Wait for the server to be ready
+        run: |
+          for attempt in $(seq 1 40); do
+            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+                   "$APP_USER@$SERVER" 'test -f /var/lib/cloud/server-ready' 2>/dev/null; then
+              echo "ready on attempt $attempt"; exit 0
+            fi
+            echo "  waiting for the machine to set itself up... ($attempt/40)"; sleep 15
+          done
+          echo "::error::the server was not ready in time; the machine failed to set itself up"; exit 1
+
+      # A rule too wide works just the same and only shows on the wrong day.
+      - name: Prove the CI cannot be root
+        run: |
+          if ssh -o ConnectTimeout=10 "root@$SERVER" 'true' 2>/dev/null; then
+            echo "::error::the CI opened a root session on the server"; exit 1
+          fi
+          echo "root session refused, as it must be"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Server up"
+            echo ""
+            echo "- Machine: $MACHINE"
+            echo "- Name on the private network: $SERVER"
+            echo "- It costs by the hour until the server down workflow runs."
+          } >> "$GITHUB_STEP_SUMMARY"

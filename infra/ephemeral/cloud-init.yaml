@@ -1,0 +1,32 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+users:
+  - name: ${app_user}
+    lock_passwd: true
+    shell: /bin/bash
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-hardening.conf
+    content: |
+      PasswordAuthentication no
+      PermitRootLogin prohibit-password
+  # The one thing the application user may do as root: take the server out of the private
+  # network, so turning it off frees the name at once.
+  - path: /etc/sudoers.d/90-leave-network
+    permissions: '0440'
+    content: |
+      ${app_user} ALL=(root) NOPASSWD: /usr/bin/tailscale logout
+
+runcmd:
+  - [sh, -c, "curl -fsSL https://get.docker.com | sh"]
+  - [usermod, -aG, docker, "${app_user}"]
+  - [sh, -c, "fallocate -l ${swap_gb}G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile"]
+  - [sh, -c, "echo '/swapfile none swap sw 0 0' >> /etc/fstab"]
+  - [sh, -c, "curl -fsSL https://tailscale.com/install.sh | sh"]
+  - [sh, -c, "tailscale up --authkey='${network_key}' --ssh --hostname='${name}'"]
+  - [systemctl, restart, ssh]
+  # These commands do not stop at the first failure, so the file whoever waits for the server
+  # looks for is only written when what the application needs is really there.
+  - [sh, -c, "docker info >/dev/null && swapon --show | grep -q /swapfile && touch /var/lib/cloud/server-ready"]
