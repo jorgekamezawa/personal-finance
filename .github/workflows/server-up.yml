@@ -1,8 +1,17 @@
 name: server up
 
-# Creates the server and proves it joined the private network. One button.
+# From nothing to the application running: creates the server, then deploys. One button.
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'commit to deploy, 7 characters or more (empty = latest on main)'
+        type: string
+        required: false
+      deploy:
+        description: 'deploy after the server is up (untick for an empty server)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -82,3 +91,10 @@ jobs:
             echo "- Name on the private network: $SERVER"
             echo "- It costs by the hour until the server down workflow runs."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: up
+    if: ${{ inputs.deploy }}
+    uses: ./.github/workflows/deploy-job.yml
+    with:
+      version: ${{ inputs.version }}
