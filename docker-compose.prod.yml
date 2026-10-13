@@ -1,0 +1,21 @@
+# Production overrides, always used on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# The server never builds and never has the source code: it pulls the images the CI
+# published for one commit.
+
+services:
+  db:
+    # Nothing outside the server's own containers talks to the database.
+    ports: !reset []
+    restart: unless-stopped
+
+  backend:
+    build: !reset null
+    image: ${IMAGE_PREFIX}-backend:${IMAGE_TAG}
+    restart: unless-stopped
+
+  frontend:
+    build: !reset null
+    image: ${IMAGE_PREFIX}-frontend:${IMAGE_TAG}
+    restart: unless-stopped
