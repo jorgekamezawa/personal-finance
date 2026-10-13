@@ -1,0 +1,198 @@
+name: deploy
+
+# Puts one published version on the server. Rolling back is running it with the previous version.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'commit to deploy, 7 characters or more (empty = latest on main)'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  # Lets the job ask for the identity token the private network trusts; no secret is stored for it.
+  id-token: write
+
+# Shares the group with server up and down: a deploy never runs while the server is changing.
+concurrency:
+  group: server
+  cancel-in-progress: false
+
+env:
+  SERVER: personal-finance
+  APP_USER: finance
+  APP_DIR: /home/finance/app
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # The whole history: completing a short commit id needs every commit of main.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolve the version
+        id: version
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          if [ -z "$REQUESTED" ]; then
+            FULL="$(git rev-parse HEAD)"
+          else
+            if [ -n "$(printf '%s' "$REQUESTED" | tr -d '0-9a-f')" ] || [ "${#REQUESTED}" -lt 7 ]; then
+              echo "::error::invalid version '$REQUESTED': use 7 or more characters of a commit id"
+              exit 1
+            fi
+            # Fails on its own when the piece matches no commit or more than one.
+            FULL="$(git rev-parse --verify --quiet "${REQUESTED}^{commit}")" || {
+              echo "::error::'$REQUESTED' matches no commit, or more than one"
+              exit 1
+            }
+            # Only commits of main have images.
+            git merge-base --is-ancestor "$FULL" HEAD || {
+              echo "::error::$FULL is not a commit of main"
+              exit 1
+            }
+          fi
+          echo "full=$FULL" >> "$GITHUB_OUTPUT"
+          echo "version: $FULL"
+
+      # Before touching the server: a version without images would take the application down.
+      - name: Check that both images exist
+        env:
+          VERSION: ${{ steps.version.outputs.full }}
+        run: |
+          missing() {
+            for image in backend frontend; do
+              docker manifest inspect "$IMAGE_PREFIX-$image:$VERSION" > /dev/null 2>&1 || return 0
+            done
+            return 1
+          }
+          for attempt in $(seq 1 24); do
+            missing || { echo "both images exist for $VERSION"; exit 0; }
+            [ "$attempt" -eq 1 ] && echo "not published yet; waiting for the CI of that commit (up to 6 min)"
+            sleep 15
+          done
+          echo "::error::the images of $VERSION did not show up; check the CI run of that commit"
+          # Not silenced this time: the reason may be something else, such as a registry that asks for login.
+          docker manifest inspect "$IMAGE_PREFIX-backend:$VERSION" > /dev/null || true
+          exit 1
+
+      - name: Join the private network
+        uses: tailscale/github-action@v4.2.0
+        with:
+          oauth-client-id: ${{ vars.TS_CI_CLIENT_ID }}
+          audience: ${{ vars.TS_CI_AUDIENCE }}
+          tags: tag:financas-ci
+
+      - name: Check that the server answers
+        run: |
+          if ! ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 \
+                 "$APP_USER@$SERVER" 'true' 2>/dev/null; then
+            echo "::error::the server did not answer; turn it on with the server up workflow"
+            exit 1
+          fi
+
+      # A rule too wide works just the same and only shows on the wrong day.
+      - name: Prove the CI cannot be root
+        run: |
+          if ssh -o ConnectTimeout=10 "root@$SERVER" 'true' 2>/dev/null; then
+            echo "::error::the CI opened a root session on the server"; exit 1
+          fi
+          echo "root session refused, as it must be"
+
+      - name: Read the version that is running
+        id: previous
+        run: |
+          # No pipe after ssh: a pipe would hide its failure and the summary would say "nothing".
+          IMAGE="$(ssh "$APP_USER@$SERVER" \
+            "docker ps --filter label=com.docker.compose.service=backend --format '{{.Image}}'")"
+          IMAGE="${IMAGE%%$'\n'*}"
+          echo "tag=${IMAGE##*:}" >> "$GITHUB_OUTPUT"
+          echo "running now: ${IMAGE:-nothing}"
+
+      # Taken from the commit being deployed, not from the tip of main: going back to an
+      # older version brings back the compose files it ran with.
+      - name: Send the compose files
+        env:
+          VERSION: ${{ steps.version.outputs.full }}
+        run: |
+          git archive --format=tar.gz --output=compose.tar.gz "$VERSION" \
+            docker-compose.yml docker-compose.prod.yml || {
+            echo "::error::$VERSION has no production compose file: it is older than this workflow"
+            exit 1
+          }
+          ssh "$APP_USER@$SERVER" "mkdir -p $APP_DIR && tar xz -C $APP_DIR" < compose.tar.gz
+
+      # The database password is born on the server and never leaves it: a new server starts
+      # with an empty database, so a stored copy would be one more secret to leak for nothing.
+      # Every other line is rewritten, so the file always matches the version being deployed.
+      - name: Write the configuration on the server
+        env:
+          VERSION: ${{ steps.version.outputs.full }}
+        run: |
+          ssh "$APP_USER@$SERVER" \
+            "APP_DIR='$APP_DIR' IMAGE_PREFIX='$IMAGE_PREFIX' IMAGE_TAG='$VERSION' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_DIR"
+          umask 077
+          PASSWORD="$(grep '^POSTGRES_PASSWORD=' .env 2>/dev/null | cut -d= -f2- || true)"
+          [ -n "$PASSWORD" ] || PASSWORD="$(openssl rand -hex 24)"
+          {
+            echo "POSTGRES_DB=personal_finance"
+            echo "POSTGRES_USER=personal_finance"
+            echo "POSTGRES_PASSWORD=$PASSWORD"
+            echo "APP_PORT=80"
+            # Unused in production, set only so the base file reads without a warning.
+            echo "DB_PORT="
+            echo "IMAGE_PREFIX=$IMAGE_PREFIX"
+            echo "IMAGE_TAG=$IMAGE_TAG"
+          } > .env.new
+          # Replaced in one move: a failure halfway never leaves a file without the password.
+          mv .env.new .env
+          REMOTE
+
+      - name: Pull the images and start
+        run: |
+          ssh "$APP_USER@$SERVER" "cd $APP_DIR && \
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull --quiet && \
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans && \
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml ps --format 'table {{.Service}}\t{{.Image}}\t{{.Status}}'"
+
+      # Through the web server, the way a person reaches it: proves the whole path, not only the backend.
+      - name: Wait for the application to be healthy
+        run: |
+          for attempt in $(seq 1 36); do
+            if curl -fsS -m 10 "http://$SERVER/api/health" 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "healthy on attempt $attempt"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::the application was not healthy after 3 minutes; it is NOT rolled back automatically"
+          exit 1
+
+      - name: Summary
+        if: always()
+        env:
+          VERSION: ${{ steps.version.outputs.full }}
+          PREVIOUS: ${{ steps.previous.outputs.tag }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            if [ "$OUTCOME" = "success" ]; then
+              echo "### Deployed ${VERSION:0:7}"
+            else
+              echo "### Deploy of ${VERSION:0:7} failed"
+            fi
+            echo ""
+            echo "- Deployed: \`${VERSION:-not resolved}\`"
+            echo "- Before it was: \`${PREVIOUS:-nothing}\`"
+            echo "- To go back, run this workflow with the previous version."
+            echo "- The database was NOT copied before this deploy: going back does not undo a change in the database."
+          } >> "$GITHUB_STEP_SUMMARY"

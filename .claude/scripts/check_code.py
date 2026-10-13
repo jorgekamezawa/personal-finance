@@ -26,6 +26,7 @@ COMMENT_ONLY_SUFFIXES = {".ts", ".tsx", ".js", ".jsx", ".css"}
 SOURCE_DIRS = ("backend/src", "frontend/src", "frontend/public", ".github/workflows", "infra")
 EXTRA_FILES = (
     "docker-compose.yml",
+    "docker-compose.prod.yml",
     "backend/build.gradle.kts",
     "backend/settings.gradle.kts",
     "backend/Dockerfile",
